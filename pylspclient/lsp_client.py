@@ -1,7 +1,9 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from pydantic import ValidationError
 from .lsp_endpoint import LspEndpoint
-from .lsp_pydantic_strcuts import (
+from .lsp_pydantic_structs import (
+    ClientCapabilities,
+    ReferenceContext,
     TextDocumentItem,
     TextDocumentIdentifier,
     DocumentSymbol,
@@ -33,8 +35,8 @@ class LspClient(object):
         rootPath: Optional[str] = None,
         rootUri: Optional[str] = None,
         initializationOptions: Optional[Any] = None,
-        capabilities: Optional[dict] = None,
-        trace: Optional[str] = None,
+        capabilities: Optional[ClientCapabilities | dict] = None,
+        trace: Optional[str | Literal["off", "messages", "verbose"]] = None,
         workspaceFolders: Optional[list] = None,
     ):
         """
@@ -71,7 +73,7 @@ class LspClient(object):
             rootPath=rootPath,
             rootUri=rootUri,
             initializationOptions=initializationOptions,
-            capabilities=capabilities,
+            capabilities=capabilities if isinstance(capabilities, dict) else capabilities.model_dump(by_alias=True),
             trace=trace,
             workspaceFolders=workspaceFolders,
         )
@@ -155,7 +157,7 @@ class LspClient(object):
 
     def typeDefinition(
         self, textDocument: TextDocumentIdentifier, position: Position
-    ) -> list[Location]:
+    ) -> list[Location] | None:
         """
         The goto type definition request is sent from the client to the server to resolve the type definition location of a symbol at a given text document position.
 
@@ -165,6 +167,8 @@ class LspClient(object):
         result_dict = self.lsp_endpoint.call_method(
             "textDocument/typeDefinition", textDocument=textDocument, position=position
         )
+        if result_dict is None:
+            return None
         return [Location.model_validate(result) for result in result_dict]
 
     def signatureHelp(
@@ -173,7 +177,7 @@ class LspClient(object):
         position: Position,
         workDoneToken: Optional[str] = None,
         partialResultToken: Optional[str] = None,
-    ) -> SignatureHelp:
+    ) -> SignatureHelp | None:
         """
         The signature help request is sent from the client to the server to request signature information at a given cursor position.
 
@@ -183,7 +187,7 @@ class LspClient(object):
         result_dict = self.lsp_endpoint.call_method(
             "textDocument/signatureHelp", textDocument=textDocument, position=position
         )
-        return SignatureHelp.model_validate(result_dict)
+        return SignatureHelp.model_validate(result_dict) if result_dict else None
 
     def completion(
         self,
@@ -212,7 +216,7 @@ class LspClient(object):
 
     def declaration(
         self, textDocument: TextDocumentIdentifier, position: Position
-    ) -> Location | list[Location] | list[LocationLink]:
+    ) -> Location | list[Location] | list[LocationLink] | None:
         """
         The go to declaration request is sent from the client to the server to resolve the declaration location of a
         symbol at a given text document position.
@@ -226,6 +230,9 @@ class LspClient(object):
         result_dict = self.lsp_endpoint.call_method(
             "textDocument/declaration", textDocument=textDocument, position=position
         )
+        if result_dict is None:
+            return None
+
         if "uri" in result_dict:
             return Location.model_validate(result_dict)
 
@@ -240,7 +247,7 @@ class LspClient(object):
         position: Position,
         workDoneToken: Optional[str] = None,
         partialResultToken: Optional[str] = None,
-    ) -> Location | list[Location] | list[LocationLink]:
+    ) -> Location | list[Location] | list[LocationLink] | None:
         """
         The go to definition request is sent from the client to the server to resolve the declaration location of a
         symbol at a given text document position.
@@ -254,6 +261,9 @@ class LspClient(object):
         result_dict = self.lsp_endpoint.call_method(
             "textDocument/definition", textDocument=textDocument, position=position
         )
+        if result_dict is None:
+            return None
+
         if "uri" in result_dict:
             return Location.model_validate(result_dict)
 
@@ -284,3 +294,22 @@ class LspClient(object):
             for uri, edits in response.get("changes", {}).items()
         }
         return WorkspaceEdit(changes=changes)
+
+    def references(
+        self,
+        textDocument: TextDocumentIdentifier,
+        position: Position,
+        context: ReferenceContext
+    ) -> list[Location]:
+        """
+        The references request is sent from the client to the server to resolve project-wide references for the symbol denoted by the given text document position.
+
+        :param TextDocumentItem textDocument: The text document.
+        :param Position position: The position inside the text document.
+        :param ReferenceContext context:
+        """
+
+        result_raw = self.lsp_endpoint.call_method(
+            "textDocument/references", textDocument=textDocument, position=position, context=context
+        )
+        return [Location.model_validate(result) for result in result_raw]

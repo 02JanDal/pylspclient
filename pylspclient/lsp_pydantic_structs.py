@@ -1,6 +1,7 @@
 from typing import Dict, Optional, List, Union
 from enum import Enum, IntEnum
-from pydantic import BaseModel, HttpUrl
+from pydantic import AliasGenerator, BaseModel, ConfigDict, HttpUrl
+from pydantic.alias_generators import to_camel
 
 
 class LanguageIdentifier(str, Enum):
@@ -248,3 +249,132 @@ class TextEdit(BaseModel):
 
 class WorkspaceEdit(BaseModel):
     changes: Dict[str, List[TextEdit]]
+
+class CompletionClientCapabilities(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+class SignatureHelpClientCapabilities(BaseModel):
+    dynamic_registration: Optional[bool] = None
+    signature_information: Optional[dict] = None
+    context_support: Optional[bool] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class DeclarationClientCapabilities(BaseModel):
+    dynamic_registration: Optional[bool] = None
+    link_support: Optional[bool] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class DefinitionClientCapabilities(BaseModel):
+    dynamic_registration: Optional[bool] = None
+    link_support: Optional[bool] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class TypeDefinitionClientCapabilities(BaseModel):
+    dynamic_registration: Optional[bool] = None
+    link_support: Optional[bool] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class ReferenceClientCapabilities(BaseModel):
+    dynamic_registration: Optional[bool] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class DocumentSymbolClientCapabilitiesSymbolKind(BaseModel):
+    value_set: Optional[list[SymbolKind]] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class DocumentSymbolClientCapabilitiesTagSupport(BaseModel):
+    value_set: Optional[list[SymbolTag]] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class DocumentSymbolClientCapabilities(BaseModel):
+    dynamic_registration: Optional[bool] = None
+    symbol_kind: Optional[DocumentSymbolClientCapabilitiesSymbolKind] = None
+    tag_support: Optional[DocumentSymbolClientCapabilitiesTagSupport] = None
+    hierarchical_document_symbol_support: Optional[bool] = None
+    label_support: Optional[bool] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class TextDocumentClientCapabilities(BaseModel):
+    completion: Optional[CompletionClientCapabilities] = None
+    signature_help: Optional[SignatureHelpClientCapabilities] = None
+    declaration: Optional[DeclarationClientCapabilities] = None
+    definition: Optional[DefinitionClientCapabilities] = None
+    type_definition: Optional[TypeDefinitionClientCapabilities] = None
+    references: Optional[ReferenceClientCapabilities] = None
+    document_symbol: Optional[DocumentSymbolClientCapabilities] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
+
+class ClientCapabilities(BaseModel):
+    workspace: Optional[dict] = None
+    text_document: Optional[TextDocumentClientCapabilities] = None
+
+    model_config = ConfigDict(
+        extra='allow',
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=to_camel,
+        )
+    )
